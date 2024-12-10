@@ -1,121 +1,186 @@
 import numpy as np
-from scipy.integrate import solve_ivp
 
-print("models.py is geladen")
+"""
+- meerdere solvers(heun, runge-kutta)
+- meerdere keuzes van beste parameters krijgen(random optimalizatie)
+- AIC, AICC en BIC
+- eigen modellen toeveoegen
 
-class GrowthModel:  # super class
-    def __init__(self, model, c=1.0, d=1.0):
-        self.c = c
-        self.d = d
-        self.model = model
+- grafiek met alle modellen en een df met de AIC, AICC en BIC waarden van alle modellen
+"""
+
+class GrowthModel:
+    def __init__(self, solver=None, optimizer=None, evaluation=None):
+        self.solver = solver
+        self.optimizer = optimizer
+        self.evaluation = evaluation
+
+    required_params = set()  # Default empty set for base class
 
     def growth_rate(self, V):
-        raise NotImplementedError("Deze methode moet worden geïmplementeerd door subklassen.")
-    
+        """To be implemented by subclasses."""
+        raise NotImplementedError("This method must be implemented by subclasses.")
+
     def euler_method(self, t):
         steps = 100
-        V = 0                                     # Beginconditie
+        V = self.params["V0"]  # Initial condition
         dt = t / steps
         for _ in range(steps):
-            dVdt = self.model.growth_rate(self, max(V, 1e-10)) # Differentiaalvergelijking
-            V += dVdt * dt
-        return V
-    
-    def euler_method_test(self, t, **params):
-        steps = 1000
-        V = params['V0']                                     # Beginconditie
-        dt = t / steps
-        for _ in range(steps):
-            dVdt = self.model.growth_rate_test(self, V, params['d'] , params['c'] , params['V0'] , params['Vmax'] , params['Vmin'] ) # Differentiaalvergelijking
+            if V <= 0:
+                V = 1e-6  # Avoid zero or negative values
+            dVdt = self.growth_rate(V)
             V += dVdt * dt
         return V
 
-    def mean_squared_error(self, data_ts, data_ys, **params):
-        N = len(data_ts)
+    def euler_method_plot(self, t, params):
+        steps = 100
+        V = params["V0"]  # Initial condition
+        dt = t / steps
+        for _ in range(steps):
+            if V <= 0:
+                V = 1e-6  # Avoid zero or negative values
+            dVdt = self.growth_rate(V, **params)
+            V += dVdt * dt
+        return V
+
+    def mean_squared_error(self):
+        N = len(self.tdata)
         total = 0.0
         for i in range(N):
-            error = data_ys[i] - GrowthModel.euler_method_test(self, t=data_ts[i], **params)
-            total += error * error
+            V_pred = self.euler_method(self.tdata[i]) # TODO: meerdere solver options
+            error = self.vdata[i] - V_pred
+            total += error ** 2
         return total / N
 
-    def best_params(self, data_ts, data_ys, params):#
-        print(params)
-        deltas = {key: 1.0 for key in params}
+    def random_search(self):
+        # TODO: implement random search
+        pass
 
-        mse = GrowthModel.mean_squared_error(self, data_ts, data_ys, **params)
-        while max(abs(delta) for delta in deltas.values()) > 1e-8:
+    def direct_search(self):
+        # Only initialize the parameters relevant for this model
+        params = {param: 1.0 for param in self.required_params}
+        self.params = params
+        deltas = {key: 1.0 for key in params}
+        mse = self.mean_squared_error()
+
+        while min(abs(delta) for delta in deltas.values()) > 1e-8:
             for key in params:
                 new_params = params.copy()
-                # Probeer de betreffende parameter the verhogen
+                # Increase the parameter
                 new_params[key] = params[key] + deltas[key]
-                new_mse = GrowthModel.mean_squared_error(self, data_ts, data_ys, **new_params)
+                self.params = new_params
+                new_mse = self.mean_squared_error()
                 if new_mse < mse:
                     params = new_params
                     mse = new_mse
                     deltas[key] *= 1.2
                     continue
-                # Probeer de betreffende parameter the verlagen
+                # Decrease the parameter
                 new_params[key] = params[key] - deltas[key]
-                new_mse = GrowthModel.mean_squared_error(self, data_ts, data_ys, **new_params)
+                self.params = new_params
+                new_mse = self.mean_squared_error()
                 if new_mse < mse:
                     params = new_params
                     mse = new_mse
                     deltas[key] *= -1.0
                     continue
-                # Verklein de stapgrootte
+                # Reduce the step size
                 deltas[key] *= 0.5
-        return new_params
+        return params
+    
+    def fit_data(self, data_ts, data_ys):
+        self.vdata= data_ys
+        self.tdata = data_ts
+        if self.optimizer == "direct":
+            params = self.direct_search()
+        self.params = params
 
+    def eval_aic(self):
+        k = len(self.params)
+        n = len(self.vdata)
+        return n * np.log(self.mean_squared_error()) + 2*k
+
+    def eval_aicc(self):
+        k = len(self.params)
+        n = len(self.vdata)
+        return self.eval_aic() + (2*k + (k+1)) / (n-k-1)
+
+    def eval_bic(self):
+        k = len(self.params)
+        n = len(self.vdata)
+        return n * np.log(self.mean_squared_error()) + np.log(n)*k
+
+# Define required parameters for each model
 class LinearGrowth(GrowthModel):
-    def growth_rate(self, V):
-        return self.c
+    required_params = {"c", "V0"}
 
-class LinearGrowth_test(GrowthModel):
-    def growth_rate_test(self, V,d,c,V0, Vmax, Vmin):
-        return c
+    def growth_rate(self, V):
+        return self.params["c"]
+
 
 class ExponentialGrowth(GrowthModel):
+    required_params = {"c", "V0"}
+
     def growth_rate(self, V):
-        return self.c * V
+        return self.params["c"] * V
 
 class MendelsohnGrowth(GrowthModel):
+    required_params = {"c", "d", "V0"}
+
     def growth_rate(self, V):
-        return self.c * (V ** self.d)
+        # Cap V to prevent overflow
+        return self.params["c"] * (V ** self.params["d"])
 
 class ExponentialDecayGrowth(GrowthModel):
+    required_params = {"c", "Vmax", "V0"}
+
     def growth_rate(self, V):
-        return self.c * (self.Vmax - V)
+        return self.params["c"] * (self.params["Vmax"] - V)
 
 class LogisticGrowth(GrowthModel):
+    required_params = {"c", "V0", "Vmax"}
+
     def growth_rate(self, V):
-        return self.c * self.V * (self.V_max - self.V)
+        return self.params["c"] * V * (self.params["Vmax"] - V)
+
 
 class MontrollGrowth(GrowthModel):
+    required_params = {"c", "d", "Vmax", "V0"}
+
     def growth_rate(self, V):
-        return self.c * V * (self.Vmax ** self.d - V ** self.d)
+        return self.params["c"] * V * (self.params["Vmax"] ** self.params["d"] - V ** self.params["d"])
+
 
 class AlleeEffectGrowth(GrowthModel):
+    required_params = {"c", "d", "Vmax", "Vmin", "V0"}
+
     def growth_rate(self, V):
-        return self.c * (V - self.Vmin) * (self.Vmax - V)
+        return self.params["c"] * (V - self.params["Vmin"]) * (self.params["Vmax"] - V)
+
 
 class LinearLimitedGrowth(GrowthModel):
+    required_params = {"c", "d", "V0"}
+
     def growth_rate(self, V):
-        return self.c * (V / (V + self.d))
+        return self.params["c"] * (V / (V + self.params["d"]))
+
 
 class SurfaceLimitedGrowth(GrowthModel):
-    def __init__(self, c, d):
-        super().__init__(c, d)
+    required_params = {"c", "d", "V0"}
 
     def growth_rate(self, V):
-        return self.c * (V / ((V + self.d) ** (1/3)))
+        return self.params["c"] * (V / ((V + self.params["d"]) ** (1 / 3)))
+
 
 class VonBertalanffyGrowth(GrowthModel):
-    def __init__(self, c, d):
-        super().__init__(c, d)
+    required_params = {"c", "d", "V0"}
 
     def growth_rate(self, V):
-        return self.c * (V ** (2/3)) - self.d * V
+        return self.params["c"] * (V ** (2 / 3)) - self.params["d"] * V
+
 
 class GompertzGrowth(GrowthModel):
+    required_params = {"c", "V0"}
+
     def growth_rate(self, V):
-        return self.c * V * np.log(1.0 / V)
+        return self.params["c"] * V * np.log(1.0 / V)
