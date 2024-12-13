@@ -1,10 +1,10 @@
-README: Growth Models Implementation 
-Opdracht: Casus C Hanze Hogeschool Groningen 2024-2025
+# Growth Models Implementation 
+#### Casus C Hanze Hogeschool Groningen 2024-2025
 
-Overview:
-This Python script provides a comprehensive implementation of various mathematical growth models and plot the output vs the actuel data
-Features:
-1. Growth Models:
+## Overview:
+This Python script provides a comprehensive implementation of various mathematical growth models and plot the output vs the actual data
+### Features:
+#### Growth Models:
    - Linear Growth: dV/dt = c
    - Exponential Gry_actualowth: dV/dt = c * V
    - Mendelsohn Growth: dV/dt = c * V^d
@@ -17,26 +17,33 @@ Features:
    - Von Bertalanffy Growth: dV/dt = c * V^(2/3) - d * V
    - Gompertz Growth: dV/dt = c * V * ln(V_max / V)\
    - StochasticGompertzGrowth  ΔV=c⋅Vln( V_max/V )Δt+σ⋅V Δt⋅ϵ(t)
+   - CombinedModel dV/dt = c * V^(2/3) - d * V
 
-New StochasticGompertzGrowth arikel:
+##### New StochasticGompertzGrowth arikel:
 https://iopscience.iop.org/article/10.1088/1742-6596/1366/1/012018/
 
-2. Visualization:
-   - The script plots all models on a single figure to compare their behavior over time.
-   - Each plot includes a title, labeled axes, gridlines, and a legend for clarity.
+##### CombinedModel:
+The model is used to describe the growth of a population in a limited environment. The model is a combination of the Von Bertalanffy growth model and the logistic growth model. The Von Bertalanffy growth model describes the growth of a population in an unlimited environment, while the logistic growth model describes the growth of a population in a limited environment.
 
-3. Example Data:
-   - Includes example time (`ts`) and value (`Vs`) data for real-world comparisons.
+#### Visualization examples:
+In the included file(use_case.ipynb) there is some example data and visualization examples with it. It includes 3 different visualizations. One has all the models available in one plot for easy comparison. The other one an seperate plot for each model. The last one is a table with the AIC, BIC and AICc values for each model, it's in the order of ascending BIC value.
 
-Requirements:
+#### Example Data:
+   - Can be found in the use_case.ipynb and the data folder.
+
+### Requirements:
 - Python 3.x
 - Libraries:
   - matplotlib
   - numpy
   - random
+  - pandas
+  - scipy.optimize
+  - math
+  - skopt
 
-How to Run:
-1. Ensure the required libraries are installed. Use `pip install matplotlib numpy pandas`
+### How to Run:
+1. Ensure the required libraries are installed. Use `pip install matplotlib numpy pandas random scipy.optimize math skopt` to install them if necessary.
 2. Run the script in a Python environment:
    ```bash
    python code.py
@@ -48,6 +55,5 @@ Give param as string 'euler', 'heun', 'runge_kutta' for wich method to use
 Give as a string 'direct', 'random_search' to wich method to use to find the best params.
 Give as a string 'AIC', 'AICC', 'BIC' wich calculation need to be addressed.
 
-Errors:
-- the "direct" and "runge_kutta" method are hard tested and mokey proof
-- 'AIC', 'AICC', 'BIC' calculations are correct
+### Errors:
+- Surface-Limited Growth, MendelsohnGrowth, MontrollGrowth: seems to not be working with the current implementation.
