@@ -1,3 +1,4 @@
+
 import numpy as np
 import matplotlib.pyplot as plt
 from random import random
@@ -255,12 +256,7 @@ class StochasticGompertzGrowth(GrowthModel):
         # Gompertz model with stochastic perturbation
         return a * V * np.log(1.0 / V) + noise
 
-import numpy as np
-import matplotlib.pyplot as plt
-from random import random
-import csv
 
-# Data Normalization Function
 def normalize_data(time_data, volume_data):
     """Normalize time and volume data to range [0, 1]."""
     time_min, time_max = np.min(time_data), np.max(time_data)
