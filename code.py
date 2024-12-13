@@ -307,7 +307,7 @@ def main():
     print("Choose the data source:")
     print("1: Load data from a CSV file")
     print("2: Enter data manually")
-    print("3: Generate random data")
+    print("3: Generate data")
     data_source = input("Enter the number of your choice (1, 2, or 3): ").strip()
 
     if data_source == '1':
