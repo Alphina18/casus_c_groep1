@@ -223,7 +223,7 @@ class SurfaceLimitedGrowth(GrowthModel):
             V = 1e6
         if calc == 0:
             calc = 1e6
-        return self.params["c"] * (V / ((V + self.params["d"]) ** (1 / 3)))
+        return self.params["c"] * (V / (calc) ** (1 / 3))
 
 class VonBertalanffyGrowth(GrowthModel):
     required_params = {"c", "d", "V0"}
@@ -307,7 +307,7 @@ def main():
     print("Choose the data source:")
     print("1: Load data from a CSV file")
     print("2: Enter data manually")
-    print("3: Generate random data")
+    print("3: Generate data")
     data_source = input("Enter the number of your choice (1, 2, or 3): ").strip()
 
     if data_source == '1':
@@ -380,4 +380,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
