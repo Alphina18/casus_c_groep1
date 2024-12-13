@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from random import random
 import csv
 
-# Base class for GrowthModel
 class GrowthModel:
     def __init__(self, solver='euler', optimizer='direct', evaluation='AIC'):
         self.solver = solver
