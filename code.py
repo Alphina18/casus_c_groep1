@@ -177,7 +177,7 @@ class MendelsohnGrowth(GrowthModel):
     def growth_rate(self, V):
         # Implement overflow protection
         MAX_V = 1e6  # Set a limit for the volume value to avoid overflow
-        V = min(V, MAX_V)  # Cap V to a safe value
+        V = min(V, MAX_V)  # Cap V 
         return self.params["c"] * (V ** self.params["d"])
 
 class ExponentialDecayGrowth(GrowthModel):
@@ -251,14 +251,11 @@ class StochasticGompertzGrowth(GrowthModel):
         
         # Wiener process with random noise
         noise = sigma * np.random.normal(0, 1)
-        
+        if V <= 0:
+            V = 1e6
         # Gompertz model with stochastic perturbation
         return a * V * np.log(1.0 / V) + noise
 
-import numpy as np
-import matplotlib.pyplot as plt
-from random import random
-import csv
 
 # Data Normalization Function
 def normalize_data(time_data, volume_data):
@@ -345,17 +342,6 @@ def main():
 
     # Fit data to each model
     models = {
-    "LinearGrowth": LinearGrowth,
-    "ExponentialGrowth": ExponentialGrowth,
-    "MendelsohnGrowth": MendelsohnGrowth,
-    "ExponentialDecayGrowth": ExponentialDecayGrowth,
-    "LogisticGrowth": LogisticGrowth,
-    "MontrollGrowth": MontrollGrowth,
-    "AlleeEffectGrowth": AlleeEffectGrowth,
-    "LinearLimitedGrowth": LinearLimitedGrowth,
-    "SurfaceLimitedGrowth": SurfaceLimitedGrowth,
-    "VonBertalanffyGrowth": VonBertalanffyGrowth,
-    "GompertzGrowth": GompertzGrowth,
     "StochasticGompertzGrowth": StochasticGompertzGrowth
     }
     plt.figure(figsize=(10, 6))
@@ -380,4 +366,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
