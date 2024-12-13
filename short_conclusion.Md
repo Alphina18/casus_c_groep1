@@ -7,7 +7,7 @@ VonBertalanffyGrowth got less parameter then GompertzGrowth but predict it beter
 So it is a certain winner.
 
 This models are only tested on generated data.
-Also this model are almost the same equation.
+Also this models have almost the same equation so it make sense.
 
 The StochasticGompertzGrowth model is the most random.
 This is because it uses the Wiener process with random noise.
