@@ -1,6 +1,6 @@
 import numpy as np
 from skopt import gp_minimize
-import random
+from random import random
 """
 - meerdere solvers(heun, runge-kutta)
 - meerdere keuzes van beste parameters krijgen(random optimalizatie)
@@ -55,7 +55,7 @@ class GrowthModel:
             if V >= 1e10: # Avoid big numbers
                 V = 1e10
             dVdt = self.growth_rate(V)
-            V += dVdt * dt
+            V += int(dVdt * dt)
         return V
     
     def heun_method(self, t):
@@ -73,7 +73,7 @@ class GrowthModel:
             dVdt2 = self.growth_rate(V1)                # Differentiaalvergelijking stap 2
             # Definitieve stap:
             dydt = (dVdt1 + dVdt2) / 2.0
-            V += dydt * dt
+            V += int(dydt * dt)
         return V
     
     def runge_kutta(self, t):
@@ -94,7 +94,7 @@ class GrowthModel:
             dydt4 = self.growth_rate(V3)                # Differentiaalvergelijking stap 4
             # Definitieve stap:
             dydt = (dVdt1 + 2.0 * dVdt2 + 2.0 * dVdt3 + dydt4) / 6.0
-            V += dydt * dt
+            V += int(dydt * dt)
         return V
 
     def mean_squared_error(self):
@@ -133,7 +133,7 @@ class GrowthModel:
             # Map parameters to the model's params dictionary
             for i, param in enumerate(self.required_params):
                 self.params[param] = params[i]
-            return self.evaluation()
+            return self.mean_squared_error()
 
         # Perform Bayesian optimization
         res = gp_minimize(objective_function, search_space, n_calls=15)
@@ -150,7 +150,7 @@ class GrowthModel:
         params = {param: 1.0 for param in self.required_params}
         self.params = params
         deltas = {key: 1.0 for key in params}
-        mse = self.evaluation()
+        mse = self.mean_squared_error()
 
         while min(abs(delta) for delta in deltas.values()) > 1e-8:
             for key in params:
@@ -158,7 +158,7 @@ class GrowthModel:
                 # Increase the parameter
                 new_params[key] = params[key] + deltas[key]
                 self.params = new_params
-                new_mse = self.evaluation()
+                new_mse = self.mean_squared_error()
                 if new_mse < mse:
                     params = new_params
                     mse = new_mse
@@ -167,7 +167,7 @@ class GrowthModel:
                 # Decrease the parameter
                 new_params[key] = params[key] - deltas[key]
                 self.params = new_params
-                new_mse = self.evaluation()
+                new_mse = self.mean_squared_error()
                 if new_mse < mse:
                     params = new_params
                     mse = new_mse
@@ -343,6 +343,8 @@ class CombinedModel(GrowthModel):
     required_params = {"c", "V0", "d", "Vmax"}
 
     def growth_rate(self, V):
+        self.params["Vmax"] = 1.0
+
         return self.params["c"] * (V ** (2 / 3)) * (1 - (V / self.params["Vmax"])) - self.params["d"] * V
     
     def __str__(self):
@@ -350,3 +352,22 @@ class CombinedModel(GrowthModel):
 
     def __repr__(self):
         return "CombinedModel"
+    
+class StochasticGompertzGrowth(GrowthModel):
+    required_params = {"a", "V0", "sigma"}
+
+    def growth_rate(self, V):
+        """Stochastic Gompertz growth rate with Wiener process."""
+        a = self.params["a"]
+        sigma = self.params["sigma"]
+        
+        # Wiener process with random noise
+        noise = sigma * np.random.normal(0, 1)
+        
+        # Gompertz model with stochastic perturbation
+        return a * V * np.log(1.0 / V) + noise
+    def __str__(self):
+        return "a * V * log(1 - V) + (sigma * random(0,1))"
+
+    def __repr__(self):
+        return "StochasticGompertzGrowth"
