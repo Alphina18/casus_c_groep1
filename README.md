@@ -44,16 +44,18 @@ In the included file(use_case.ipynb) there is some example data and visualizatio
 
 ### How to Run:
 1. Ensure the required libraries are installed. Use `pip install matplotlib numpy pandas random scipy.optimize math skopt` to install them if necessary.
-2. Run the script in a Python environment:
-   ```bash
-   python code.py
-Give param as number how to get the data
-	1: Load data from a CSV file
-	2: Enter data manually
-	3: Generate random data
-Give param as string 'euler', 'heun', 'runge_kutta' for wich method to use
-Give as a string 'direct', 'random_search' to wich method to use to find the best params.
-Give as a string 'AIC', 'AICC', 'BIC' wich calculation need to be addressed.
+2. Call on the model and give param as string 'euler', 'heun', 'runge_kutta' for wich method to use. Give as a string 'direct', 'random' to wich method to use to find the best params. Give as a string 'AIC', 'AICC', 'BIC' which calculation need to be addressed for getting the best params. For example please look in use?case.ipynb
+
+3. For your information there is also a script for in the commandline: the use case for that is different:
+4.  Run the script in a Python environment:
+5.  python code.py 
+	Give param as number how to get the data
+		1: Load data from a CSV file
+		2: Enter data manually
+		3: Generate random data
+	Give param as string 'euler', 'heun', 'runge_kutta' for wich method to use
+	Give as a string 'direct', 'random_search' to wich method to use to find the best params.
+	Give as a string 'AIC', 'AICC', 'BIC' wich calculation need to be addressed.
 
 ### Errors:
 - Surface-Limited Growth, MendelsohnGrowth, MontrollGrowth: seems to not be working with the current implementation.
