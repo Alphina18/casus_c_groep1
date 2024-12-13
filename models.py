@@ -50,12 +50,10 @@ class GrowthModel:
         V = self.params["V0"]  # Initial condition
         dt = t / steps
         for _ in range(steps):
-            if V <= 0:
-                V = 1e-6  # Avoid zero or negative values
-            if V >= 1e10: # Avoid big numbers
-                V = 1e10
+            if V <= 1e-4:
+                V = 0.001  # Avoid zero or negative values
             dVdt = self.growth_rate(V)
-            V += int(dVdt * dt)
+            V += dVdt * dt
         return V
     
     def heun_method(self, t):
@@ -64,16 +62,14 @@ class GrowthModel:
         dt = t / steps
         for _ in range(steps):
             # Tijdelijke stappen:
-            if V <= 0:
-                V = 1e-6  # Avoid zero or negative values
-            if V >= 1e10: # Avoid big numbers
-                V = 1e10
+            if V <= 1e-4:
+                V = 0.001  # Avoid zero or negative values
             dVdt1 = self.growth_rate(V)                 # Differentiaalvergelijking stap 1
             V1 = V + dVdt1 * dt
             dVdt2 = self.growth_rate(V1)                # Differentiaalvergelijking stap 2
             # Definitieve stap:
             dydt = (dVdt1 + dVdt2) / 2.0
-            V += int(dydt * dt)
+            V += dydt * dt
         return V
     
     def runge_kutta(self, t):
@@ -81,10 +77,8 @@ class GrowthModel:
         V = self.params["V0"]                            # Beginconditie
         dt = t / steps
         for _ in range(steps):
-            if V <= 0:
-                V = 1e-6  # Avoid zero or negative values
-            if V >= 1e10: # Avoid big numbers
-                V = 1e10
+            if V <= 1e-4:
+                V = 0.001  # Avoid zero or negative values
             dVdt1 = self.growth_rate(V)                # Differentiaalvergelijking stap 1
             V1 = V + dVdt1 * 0.5 * dt
             dVdt2 = self.growth_rate(V1)                # Differentiaalvergelijking stap 2
@@ -94,7 +88,7 @@ class GrowthModel:
             dydt4 = self.growth_rate(V3)                # Differentiaalvergelijking stap 4
             # Definitieve stap:
             dydt = (dVdt1 + 2.0 * dVdt2 + 2.0 * dVdt3 + dydt4) / 6.0
-            V += int(dydt * dt)
+            V += dydt * dt
         return V
 
     def mean_squared_error(self):
@@ -110,14 +104,14 @@ class GrowthModel:
     def random_search(self):
         # Initialize parameters (this could be changed depending on the model)
         params = {key: 0.0 for key in self.required_params}  # Initial guess for parameters
-        mse = self.mean_squared_error()
+        mse = self.evaluation()
         
         tries = 0
-        while tries < 1000:
+        while tries < 20:
             tries += 1
             new_params = {key: val + (random() - 0.5) for key, val in params.items()}
             self.params = new_params
-            new_mse = self.mean_squared_error()
+            new_mse = self.evaluation()
             
             # If the new MSE is better, keep the parameters
             if new_mse < mse:
@@ -133,7 +127,7 @@ class GrowthModel:
             # Map parameters to the model's params dictionary
             for i, param in enumerate(self.required_params):
                 self.params[param] = params[i]
-            return self.mean_squared_error()
+            return self.evaluation()
 
         # Perform Bayesian optimization
         res = gp_minimize(objective_function, search_space, n_calls=15)
@@ -150,15 +144,15 @@ class GrowthModel:
         params = {param: 1.0 for param in self.required_params}
         self.params = params
         deltas = {key: 1.0 for key in params}
-        mse = self.mean_squared_error()
+        mse = self.evaluation()
 
-        while min(abs(delta) for delta in deltas.values()) > 1e-8:
+        while min(abs(delta) for delta in deltas.values()) > 1e-4:
             for key in params:
                 new_params = params.copy()
                 # Increase the parameter
                 new_params[key] = params[key] + deltas[key]
                 self.params = new_params
-                new_mse = self.mean_squared_error()
+                new_mse = self.evaluation()
                 if new_mse < mse:
                     params = new_params
                     mse = new_mse
@@ -167,7 +161,7 @@ class GrowthModel:
                 # Decrease the parameter
                 new_params[key] = params[key] - deltas[key]
                 self.params = new_params
-                new_mse = self.mean_squared_error()
+                new_mse = self.evaluation()
                 if new_mse < mse:
                     params = new_params
                     mse = new_mse
@@ -343,7 +337,8 @@ class CombinedModel(GrowthModel):
     required_params = {"c", "V0", "d", "Vmax"}
 
     def growth_rate(self, V):
-        self.params["Vmax"] = 1.0
+        if self.params["Vmax"] < 0.001:
+            self.params["Vmax"] = 0.001
 
         return self.params["c"] * (V ** (2 / 3)) * (1 - (V / self.params["Vmax"])) - self.params["d"] * V
     
